@@ -1,30 +1,34 @@
 package graphql;
 
-// Import the business logic class responsible for managing "UniteEnseignement" data
+// Import the business logic classes responsible for managing "UniteEnseignement" and "Module" data
+import business.ModuleBusiness;
 import business.UniteEnseignementBusiness;
 
 // Import the GraphQL library class used to define the root of GraphQL mutations
 import com.coxautodev.graphql.tools.GraphQLRootResolver;
 
-// Import the entity class representing a Teaching Unit (Unité d’Enseignement)
+// Import the entity classes
+import entities.Module;
 import entities.UniteEnseignement;
 
 /**
- * This class defines all GraphQL mutations related to the "UniteEnseignement" entity.
+ * This class defines all GraphQL mutations related to the "UniteEnseignement" and "Module" entities.
  * A mutation in GraphQL is used to perform write operations (create, update, delete)
  * as opposed to queries, which are for read operations.
  */
 public class MutationResolver implements GraphQLRootResolver {
 
-    // Attribute used to access the business logic (service layer)
+    // Attributes used to access the business logic (service layer)
     public UniteEnseignementBusiness helper;
+    public ModuleBusiness moduleHelper;
 
     /**
      * Constructor of the resolver.
-     * It initializes the business helper that manages the teaching units.
+     * It initializes the business helpers that manage teaching units and modules.
      */
     public MutationResolver() {
         helper = new UniteEnseignementBusiness();
+        moduleHelper = new ModuleBusiness();
     }
 
     /**
@@ -53,5 +57,33 @@ public class MutationResolver implements GraphQLRootResolver {
         // Call the business logic method to add the new unit
         // The helper handles the actual persistence or logic of adding the entity
         return helper.addUniteEnseignement(ue);
+    }
+
+    // 2. Création d’un nouveau module avec un type de retour Boolean
+    public boolean addModule(String matricule, String libelle, int coef, int volumeHoraire, int codeUE, Module.TypeModule type) {
+        UniteEnseignement ue = helper.getUEByCode(codeUE);
+        if (ue == null) {
+            ue = new UniteEnseignement(codeUE, null, null, 0, 0);
+        }
+        Module module = new Module(matricule, libelle, coef, volumeHoraire, type, ue);
+        return moduleHelper.addModule(module);
+    }
+
+    // 3. Modification d’un module ayant un identifiant spécifique
+    public Module updateModule(String matricule, String libelle, int coef, int volumeHoraire, Module.TypeModule type, int codeUE) {
+        UniteEnseignement ue = helper.getUEByCode(codeUE);
+        Module updatedModule = new Module(matricule, libelle, coef, volumeHoraire, type, ue);
+        if (moduleHelper.updateModule(matricule, updatedModule)) {
+            return updatedModule;
+        }
+        return null;
+    }
+
+    // 6. Suppression d'un module ayant une matricule spécifique
+    public String deleteModule(String matricule) {
+        if (moduleHelper.deleteModule(matricule)) {
+            return "deleted successfully";
+        }
+        return "Module not found";
     }
 }
